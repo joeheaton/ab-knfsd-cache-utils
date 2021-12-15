@@ -46,7 +46,9 @@ install_build_dependencies() {
     echo -e "------${SHELL_DEFAULT}"
     apt-get update
     apt-get upgrade -y
-    apt-get install libncurses-dev flex bison openssl libssl-dev dkms libelf-dev libudev-dev libpci-dev libiberty-dev autoconf dwarves build-essential libevent-dev libsqlite3-dev libblkid-dev libkeyutils-dev libdevmapper-dev -y
+    apt-get install   kernel-wedge linux-cloud-tools-common libtirpc-dev gawk zstd ncurses-dev xz-utils bc git fakeroot make gcc pkg-config libncurses-dev libncurses-dev \
+                      flex bison openssl libssl-dev dkms libelf-dev libudev-dev libpci-dev libiberty-dev autoconf dwarves build-essential libevent-dev libsqlite3-dev \
+                      libblkid-dev libkeyutils-dev libdevmapper-dev libcap-dev default-jdk -y
     echo -e -n "${SHELL_YELLOW}------ "
     echo "DONE"
 
@@ -59,7 +61,6 @@ download_nfs-utils() {
     echo -n "Creating directory for nfs-utils source... "
     mkdir -p ~/nfs-utils
     echo "DONE"
-
     echo -e "${SHELL_YELLOW}"
     echo "Downloading nfs-utils..."
     echo -e "------${SHELL_DEFAULT}"
@@ -137,39 +138,50 @@ install_knfsd_agent() {
 
 }
 
-# download_kernel() downloads the 5.11.8 Kernel
+
+add_additional_disk () {
+   
+    echo Formating additional disk 
+    echo -e "------${SHELL_DEFAULT}"
+    mkfs.ext4 -m 0 -E lazy_itable_init=0,lazy_journal_init=0,discard  /dev/disk/by-id/google-custom-kernel
+    echo "Creating mounting directory"
+    mkdir -p /mnt/kernel-build
+    echo "Mount additional disk"
+    mount -o discard,defaults  /dev/disk/by-id/google-custom-kernel /mnt/kernel-build
+    echo -e -n "${SHELL_YELLOW}------ "
+    echo "DONE"
+}
+
+# download_kernel() downloads the 5.13.0 Kernel
 download_kernel() {
 
-    # Make directory for kernel Images
-    echo -n "Creating directory for kernel Images... "
-    mkdir -p ~/kernel-images
-    echo "DONE"
-
-    # Download Kernel .deb packages from kernel.ubuntu.com
-    echo "Downloading kernel .deb files..."
+    echo "Downloading kernel source files..."
     echo -e "------${SHELL_DEFAULT}"
-    curl -o ~/kernel-images/linux-headers-5.11.8-051108-generic_5.11.8-051108.202103200636_amd64.deb https://kernel.ubuntu.com/~kernel-ppa/mainline/v5.11.8/amd64/linux-headers-5.11.8-051108-generic_5.11.8-051108.202103200636_amd64.deb
-    curl -o ~/kernel-images/linux-headers-5.11.8-051108_5.11.8-051108.202103200636_all.deb https://kernel.ubuntu.com/~kernel-ppa/mainline/v5.11.8/amd64/linux-headers-5.11.8-051108_5.11.8-051108.202103200636_all.deb
-    curl -o ~/kernel-images/linux-image-unsigned-5.11.8-051108-generic_5.11.8-051108.202103200636_amd64.deb https://kernel.ubuntu.com/~kernel-ppa/mainline/v5.11.8/amd64/linux-image-unsigned-5.11.8-051108-generic_5.11.8-051108.202103200636_amd64.deb
-    curl -o ~/kernel-images/linux-modules-5.11.8-051108-generic_5.11.8-051108.202103200636_amd64.deb https://kernel.ubuntu.com/~kernel-ppa/mainline/v5.11.8/amd64/linux-modules-5.11.8-051108-generic_5.11.8-051108.202103200636_amd64.deb
-    echo -e -n "${SHELL_YELLOW}------"
+    cd /mnt/kernel-build/
+    git clone -b Ubuntu-hwe-5.13-5.13.0-23.23_20.04.1 --depth 1 git://kernel.ubuntu.com/ubuntu/ubuntu-focal.git
+    cd ubuntu-focal/
+    echo -e -n "${SHELL_YELLOW}------ "
     echo "DONE"
 
 }
 
-# install_kernel() installs the 5.11.8 kernel
+# install_kernel() installs the 5.13.0 kernel
 install_kernel() {
 
     # Install the new kernel using dpkg
     echo "Installing kernel...."
     echo -e "------${SHELL_DEFAULT}"
-    dpkg -i ~/kernel-images/*
-    echo -e -n "${SHELL_YELLOW}------"
+    LANG=C fakeroot debian/rules clean
+    LANG=C fakeroot debian/rules binary
+    cd ..
+    dpkg -i *.deb
+    echo -e -n "${SHELL_YELLOW}------ "
     echo "DONE"
 
 }
 
 # Prep Server
+add_additional_disk
 install_nfs_packages
 install_build_dependencies
 download_nfs-utils

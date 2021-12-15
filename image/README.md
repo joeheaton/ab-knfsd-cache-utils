@@ -38,7 +38,8 @@ gcloud compute instances create $BUILD_MACHINE_NAME \
     --boot-disk-size=20GB \
     --boot-disk-type=pd-ssd \
     --metadata-from-file=BUILD_IMAGE_SCRIPT=1_build_image.sh,startup-script=0_init.sh \
-    --metadata=serial-port-enable=TRUE
+    --metadata=serial-port-enable=TRUE \
+    --create-disk=device-name=custom-kernel,mode=rw,name=custom-kernel,size=100,type=pd-ssd 
 ```
 
 ### (Optional) Create Firewall Rule for IAP SSH Access

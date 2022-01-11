@@ -10,6 +10,7 @@
 * (GCP) Packer build script
 * (GCP) Use fixed ports for NFS services
 * (GCP) Configure mount point timeout when building the image
+* (GCP) Remove restriction on protected paths
 
 ## (GCP) Use LTS versions of Ubuntu
 
@@ -69,3 +70,9 @@ This was especially problematic if the client used UDP to access the portmapper 
 
 Moved this configuration into the modprobe options when the image is built.
 You will need to build a new image when updating to the latest Terraform to avoid issues with stale file handles.
+
+## (GCP) Remove restriction on protected paths
+
+The restriction on protected paths has been removed. This requires building a new proxy image to apply the NFS `rootdir` setting.
+
+**WARNING:** If you use the current Terraform with an old image, the old image will be vulnerable to the bug where auto-discovery can overwrite a system path such as `/bin` with a mount.
